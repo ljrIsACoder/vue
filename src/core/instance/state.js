@@ -111,6 +111,8 @@ function initProps (vm: Component, propsOptions: Object) {
 
 function initData (vm: Component) {
   let data = vm.$options.data
+  // 初始化 _data， 组件中data是函数，调用函数返回结果
+  // 否则直接返回data
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
@@ -123,10 +125,13 @@ function initData (vm: Component) {
     )
   }
   // proxy data on instance
+  // 获取 data 中的所有属性
   const keys = Object.keys(data)
+  // 获取 props / methods
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
+  // 判断 data 上的成员是否和 props/methods 重名
   while (i--) {
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {
@@ -148,6 +153,7 @@ function initData (vm: Component) {
     }
   }
   // observe data
+  // 响应式处理
   observe(data, true /* asRootData */)
 }
 
@@ -352,15 +358,20 @@ export function stateMixin (Vue: Class<Component>) {
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
+    // 标记为用户 Watcher
     options.user = true
+    // 创建用户 watcher 对象
     const watcher = new Watcher(vm, expOrFn, cb, options)
+    // 判断 immediate 如果为true
     if (options.immediate) {
+      // 立即执行一次 cb 回调， 并且把当前值传入
       try {
         cb.call(vm, watcher.value)
       } catch (error) {
         handleError(error, vm, `callback for immediate watcher "${watcher.expression}"`)
       }
     }
+    // 返回取消监听的方法
     return function unwatchFn () {
       watcher.teardown()
     }
