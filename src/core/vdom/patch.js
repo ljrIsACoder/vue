@@ -71,9 +71,20 @@ export function createPatchFunction (backend) {
   let i, j
   const cbs = {}
 
+  // modules 节点的属性/事件/样式的操作
+  // nodeOps 对操作dom方法的二次封装
   const { modules, nodeOps } = backend
 
+  // 把模块中的钩子函数全部设置到cbs中，将来统一触发
+  // cbs --> { 'create': [fn1, fn2, ...] }
   for (i = 0; i < hooks.length; ++i) {
+    /* eg: cbs = {
+      create: [],
+      activate: [],
+      update: [],
+      remove: [],
+      destroy: []
+    } */
     cbs[hooks[i]] = []
     for (j = 0; j < modules.length; ++j) {
       if (isDef(modules[j][hooks[i]])) {
@@ -698,6 +709,7 @@ export function createPatchFunction (backend) {
   }
 
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
+    // 如果没有vnode但是有oldVnode，执行销毁钩子函数
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
       return
@@ -707,12 +719,15 @@ export function createPatchFunction (backend) {
     const insertedVnodeQueue = []
 
     if (isUndef(oldVnode)) {
+      // 如果没有oldVnode，创建vnode对应的真实dom
       // empty mount (likely as component), create new root element
       isInitialPatch = true
       createElm(vnode, insertedVnodeQueue)
     } else {
+      // 判断当前 oldVnode 是否是 DOM 元素（首次渲染）
       const isRealElement = isDef(oldVnode.nodeType)
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
+        // 如果不是真实 DOM， 并且两个 VNode 是sameVnode， 这个时候开始执行 Diff 过程
         // patch existing root node
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
       } else {
